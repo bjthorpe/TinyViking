@@ -77,13 +77,13 @@ Now that we’ve got the NFS share exported from the master node, we want to mou
 ## Install the NFS client.
 
 sudo apt install nfs-common -y
-4.3.2: Create the mount folder.
+- Create the mount folder.
 This should be the same directory that you mounted the flash drive to on the master node. In my case, this is /clusterfs:
 
 sudo mkdir /clusterfs
 sudo chown nobody.nogroup /clusterfs
 sudo chmod -R 777 /clusterfs
-4.3.3: Setup automatic mounting.
+- Setup automatic mounting.
 We want the NFS share to mount automatically when the nodes boot. Edit /etc/fstab to accomplish this by adding the following line:
 
 <master node ip>:/clusterfs    /clusterfs    nfs    defaults   0 0
