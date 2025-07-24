@@ -27,19 +27,14 @@ baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
 
 # Build settings
-theme: minima
+#theme: minima
+theme: just-the-docs
 plugins:
   - jekyll-feed
-  - jekyll-toc
-
-# TOC Settings
-toc:
- min_level: 2
- max_level: 4
- list_class: toc
- list_class: toc__list
- sublist_class: toc__sublist
-
+  
+markdown: kramdown
+kramdown:
+  math_engine: mathjax
 # Exclude from processing.
 # The following items will not be processed, by default.
 # Any item listed under the `exclude:` key here will be automatically added to

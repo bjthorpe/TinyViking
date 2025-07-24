@@ -10,4 +10,6 @@ layout: home
 
 ## [Into to python](https://swcarpentry.github.io/python-novice-inflammation/) from Software Carpentry
 
+## [Python challenges]({% link Chalanges.md %})
+
 ## [MPI python tutorial]({% link mpi4py_tutorial.md %})

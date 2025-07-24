@@ -2,12 +2,14 @@
 layout: page
 title: "Mpi python Tutorial"
 permalink: /Tutorial/
-toc: true
 ---
 
 Here's a step-by-step tutorial for using MPI in Python, using the mpi4py library. This will cover installation, basic concepts, and some example programs to get you started with parallel computing using MPI.
 
 Note: all the examples we are using are just "toybox examples" for reference only. These are useful for learning. However, if you want to do any of these things seriously, there are likely third party library’s that can do the same thing in better and more efficient ways without resorting to MPI.
+
+1. toc
+{:toc}
 
 ## 🔧 Part 1: Prerequisites, Installing MPI and mpi4py
 
@@ -77,6 +79,7 @@ sudo apt update
 sudo apt install mpich
 pip install mpi4py
 ```
+
 On MacOS (using Homebrew) open a terminal and type:
 
 ```bash
@@ -210,7 +213,7 @@ data = comm.bcast(data, root=0)
 print(f"Process {rank} received data: {data}")
 ```
 
-## Part 5: 🍱 Scatter and Gather
+## Part 5: 🍱 Scatter, Gather and Reduce
 
 Scatter and gather are logical extensions of broadcast allowing to processes to send or receive data from all processes.
 
@@ -246,17 +249,58 @@ The simple answer is efficiency. Broacast sends exactly the same data to all pro
 
 Scatter on the other hand can send different parts of the data to different processes. e.g. sending one slice of a large array to each process. This is less efficient for small messages (or when you need to send all the data) as it can't be optimised as much. However it can be extremally beneficial for sending large data as it reduces the overall communication to just the data that is needed (which is usually the bottleneck).
 
-## Part 6: 🧪 Lets put this to use: π by Montecarlo
+### Reduce
 
-Let’s walk through a real-world example using MPI in Python: parallelizing a Monte Carlo simulation to estimate π.
+Reduce is an extension of Gather.
+
+The main difference is after collecting all the data from each process onto the root process we then apply a function 
+
+Some functions you can apply are:
+
+- MPI_MAX - Returns the maximum element.
+- MPI_MIN - Returns the minimum element.
+- MPI_SUM - Sums the elements.
+- MPI_PROD - Multiplies all elements.
+- MPI_MAXLOC - Returns the maximum value and the rank of the process that owns it.
+- MPI_MINLOC - Returns the minimum value and the rank of the process that owns it.
+
+```python
+# scatter_gather.py
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
+
+if rank == 0:
+    data = [i*2 for i in range(size)]
+else:
+    data = None
+
+# Scatter data from root to all processes
+recv_data = comm.scatter(data, root=0)
+print(f"Process {rank} received: {recv_data}")
+
+# Each process does some work
+processed_data = recv_data + 1
+
+# Gather results back to root and find the Maximum
+max_val = comm.reduce(local_count, op=MPI.MAX, root=0)
+if rank == 0:
+    print(f"The maximum value is: {max_val}")
+```
+
+## Part 7: 🧪 Lets put this to use: $\pi$ by Montecarlo
+
+Let’s walk through a real-world example using MPI in Python: parallelizing a Monte Carlo simulation to estimate $\pi$.
 
 ### 🎯 Goal
 
-We’ll estimate the value of π using a Monte Carlo method:
+We’ll estimate the value of $\pi$ using a Monte Carlo method:
 
 * Randomly generate points in a square.
 * Count how many fall inside the unit circle.
-* compute π ≈ 4 × (points inside circle / total points)
+* compute $\pi$ ≈ 4 × (points inside circle / total points)
 
 ### 🖥️ 🔂 Sequential Version (for comparison)
 
@@ -344,9 +388,9 @@ Time taken with 4 processes: 1.2345 seconds
 
 ### 🧠 What's Happening?
 
-* Each process estimates a portion of π
+* Each process estimates a portion of $\pi$
 * reduce() then Combines all local results into one total
-* The Root process computes the final π value and prints it
+* The Root process computes the final $\pi$ value and prints it
 
 ### 🚀 Next Steps
 
@@ -355,95 +399,9 @@ Try changing the number of processes (-n 2, -n 8, etc.) and compare performance!
 * Is there a point of diminishing returns?
 * Why do we think this is?
 
-## Part 6b: 🖼️ Visual Monte Carlo π with MPI
+## Part 8: 📈 Non-Blocking Monte Carlo $\pi$ Estimator
 
-To help make you see how the algorithm works and makes the parallelism more intuitive. We will now enhance the MPI-based Monte Carlo π estimator with a visual plot of the randomly generated points, showing which ones landed inside vs outside the unit circle.
-
-We'll modify the code so that:
-
-* Each process generates a list of points.
-
-* These points are gathered at the root process.
-
-* Root process plots all points using matplotlib.
-
-```python
-# pi_mpi_plot.py
-from mpi4py import MPI
-import numpy as np
-import matplotlib.pyplot as plt
-
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-size = comm.Get_size()
-
-# Total number of points
-total_points = 10000
-
-# Points per process
-points_per_proc = total_points // size
-
-# Each process generates random points
-np.random.seed(rank)  # Different seed per process
-x = np.random.rand(points_per_proc)
-y = np.random.rand(points_per_proc)
-
-# Compute whether each point is inside the unit circle
-inside = x**2 + y**2 <= 1.0
-
-# Combine x, y, and inside info
-local_points = np.column_stack((x, y, inside))
-
-# Gather all points to root
-gathered = comm.gather(local_points, root=0)
-
-if rank == 0:
-    # Concatenate all point arrays
-    all_points = np.vstack(gathered)
-
-    # Separate points inside and outside the circle
-    inside_points = all_points[all_points[:, 2] == 1]
-    outside_points = all_points[all_points[:, 2] == 0]
-
-    # Plotting
-    plt.figure(figsize=(6, 6))
-    plt.scatter(outside_points[:, 0], outside_points[:, 1], color='red', s=1, label='Outside')
-    plt.scatter(inside_points[:, 0], inside_points[:, 1], color='blue', s=1, label='Inside')
-    plt.gca().set_aspect('equal')
-    plt.title('Monte Carlo π Estimation')
-    plt.legend()
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.tight_layout()
-    plt.savefig('monte_carlo_pi.png')
-    plt.show()
-```
-
-### ▶️ Run It
-
-Run this with multiple processes like so:
-
-mpiexec -n 4 python pi_mpi_plot.py
-
-After running, you’ll see:
-
-* A matplotlib window showing a circle inside a square with blue (inside) and red (outside) dots.
-
-* An image file monte_carlo_pi.png saved to disk.
-
-### 🧠 Notes
-
-* Only the root process does the plotting to avoid GUI conflicts or errors.
-
-* We gather x, y, inside flags into a 2D NumPy array for clean visualization.
-
-* For larger numbers of points, increase total_points for better π approximation and clearer circle shape.
-
-As a bonus exercise try creating an animated plot using matplotlib FuncAnimation https://holypython.com/how-to-create-matplotlib-animations-the-ultimate-guide/
-
-## Part 7: 📈 Non-Blocking Monte Carlo π Estimator
-
-Finally let's upgrade the Monte Carlo π estimator to use non-blocking communication with mpi4py.
+Finally let's upgrade the Monte Carlo $\pi$ estimator to use non-blocking communication with mpi4py.
 
 This is especially useful in performance-critical applications where you want to overlap computation with communication.
 
@@ -582,13 +540,13 @@ if rank == 0:
 
 ## Part 8: 🧹 Tips & Best Practices
 
-Always match **send()** with **recv()**, or you may cause a deadlock.
+* Always match **send()** with **recv()**, or you may cause a deadlock.
 
-Use non-blocking communication (isend, irecv) for better performance in large programs.
+* Where appropriate use non-blocking communication (isend, irecv) for better performance in large programs.
 
-Start with small examples and increase complexity gradually.
-
-Debugging parallel programs is harder – use logs or process-specific prints.
+* Start with small examples and increase complexity gradually.
+* get something working serially before even thinking about doing it parallel.
+* Debugging parallel programs is harder – use logs or process-specific prints.
 
 ## Part 9: 🧰 Resources
 
