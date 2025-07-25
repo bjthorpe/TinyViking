@@ -38,7 +38,7 @@ $4*\frac{N_{Circle}}{N_{Total}} = \pi$
     * compute $\pi$ ≈ 4 × (points inside circle / total points)
 2. Time how long your estimate takes and output the result
 3. Plot points inside the circle in red and outside in blue
-4. check your accuracy against the "exact" value of $\pi$ to say 50-100 dp.
+4. check your accuracy against the "exact" value of $\pi$.
 5. Try to get as close as possible in a runtime of under 1 minute.
 
 ### Tips
