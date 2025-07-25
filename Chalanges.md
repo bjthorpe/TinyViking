@@ -12,7 +12,7 @@ Also we have given some hints to set you off but we expect to look things up, I 
 
 ## 1. $\pi$ by Montecarlo
 
-You mission, should you choose to accept it. Use a Monte Carlo simulation to estimate the irrational number $\pi$.
+You mission, should you choose to accept it is to use a Monte Carlo simulation to estimate the irrational number $\pi$.
 
 Monte Carlo methods are a broad class of computational algorithms that rely on repeated random sampling to obtain numerical results. One of the basic examples of getting started with the Monte Carlo algorithm is the estimation of $\pi$.
 
