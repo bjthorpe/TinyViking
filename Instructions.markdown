@@ -35,7 +35,9 @@ sudo raspi-config
 ```
 
 - turn on ssh
+- set WiFi country to GB
 - set timezone
+- turn on and connect to WiFi
 - expand the filesystem
 
 - set each pi's hostname as "somestring"_unique_number eg RaspberyPi_01
@@ -46,11 +48,10 @@ sudo nano /etc/hostname    # change the hostname here too
 sudo nano /etc/hosts       # change "raspberrypi" to "RaspberyPi_01"
 ```
 
-- update via wifi and note down the local ip address
+- run apt update
+- set a static unique local ip address for the ethernet port.
 
-```bash
-hostname -I | cut -d' ' -f1
-```
+We used 192.168.50.X (where X is the number assigned to the pi) with a default gateway of 255.255.255.0.
 
 - set system time via network
 
@@ -58,13 +59,35 @@ hostname -I | cut -d' ' -f1
 sudo apt install ntpdate -y
 ```
 
-Finally choose 1 pi to be the login node and connect that to the screen and keyboard. The rest will be accessed by ssh.
+## Final setup steps for login node
+
+Choose 1 pi to be the login node and connect that to the screen and keyboard. The rest will be accessed by ssh.
+
+To make name resolution easier, we’re going to add hostnames of the nodes and their IP addresses to the /etc/hosts file. Edit /etc/hosts and add the following lines:
+
+```bash 
+sudo nano /etc/hosts
+
+<ip addr of RaspberyPi_02>      RaspberyPi_02
+<ip addr of RaspberyPi_03>      RaspberyPi_03
+<ip addr of RaspberyPi_04>      RaspberyPi_04
+
+```
+
+- test you can login with:
+
+```bash
+ssh RaspberyPi_02" # repeat for nodes 3 to N 
+```
+
+- setup and add ssh keys for password less login
 
 ## Setting up shared storage
 
 For the login node
 
 - Plug the flash drive into one of the USB ports.
+Note: you may wish to grab a copy of whatever is on there as the drive will be formatted.
 - Figure out its dev location by examining the output of lsblk
 
 ```bash
@@ -85,7 +108,7 @@ Note that this should be the same across all the nodes. In this example we will 
 
 ```bash
 sudo mkdir /clusterfs
-sudo chown nobody.nogroup -R /clusterfs
+sudo chown nobody:nogroup -R /clusterfs
 sudo chmod 777 -R /clusterfs
 ```
 
@@ -107,7 +130,7 @@ UUID=${SOME_NUMBER}$ /clusterfs ext4 defaults 0 2
 
 ```bash
 sudo mount -a.
-sudo chown nobody.nogroup -R /clusterfs
+sudo chown nobody:nogroup -R /clusterfs
 sudo chmod -R 766 /clusterfs
 ```
 
@@ -139,11 +162,9 @@ sudo exportfs -a
 
 ## Mount the NFS Share on the Clients
 
-Now that we’ve got the NFS share exported from the master node, we want to mount it on all of the other nodes so they can access it. Repeat this process for all of the other nodes.
+Now that we’ve got the NFS share exported from the master node, we want to mount it on all of the other nodes so they can access it. Repeat the following process for all of the other nodes.
 
 ### Install the NFS client
-
-This is easily done with: 
 
 ```bash
 sudo apt install nfs-common -y
@@ -168,26 +189,35 @@ We want the NFS share to mount automatically when the nodes boot. Edit /etc/fsta
 ```
 
 Now mount it with:
+
 ```bash
 sudo mount -a
 ```
 
 At this stage you should be able to create a file in /clusterfs and have it show up at the same path across all the nodes.
 
-## Installing and Configuring SLURM on the Master Node
+## Installing MPI and MPI4py
 
-### updating /etc/hosts
+on each node run the following:
 
-To make name resolution easier, we’re going to add hostnames of the nodes and their IP addresses to the /etc/hosts file. Edit /etc/hosts and add the following lines:
-
-```bash 
-sudo nano /etc/hosts
-
-<ip addr of RaspberyPi_02>      RaspberyPi_02
-<ip addr of RaspberyPi_03>      RaspberyPi_03
-<ip addr of RaspberyPi_04>      RaspberyPi_04
-
+```bash
+sudo apt install mpich python3-mpi4py
 ```
+
+test mpi works by running a test script hello.py
+
+```bash
+cd /clusterfs
+mpirun python hello.py
+```
+
+Now test running across multiple nodes
+
+```bash
+mpirun -N 2 -H RaspberyPi_01,RaspberyPi_02 python hello.py
+```
+
+## OPTIONAL: Installing and Configuring SLURM on the Master Node
 
 ### Install SLURM
 

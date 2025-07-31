@@ -28,7 +28,6 @@ url: "" # the base hostname & protocol for your site, e.g. http://example.com
 
 # Build settings
 #theme: minima
-remote_theme: just-the-docs
 theme: just-the-docs
 plugins:
   - jekyll-feed
@@ -55,3 +54,5 @@ kramdown:
 #   - vendor/cache/
 #   - vendor/gems/
 #   - vendor/ruby/
+aux_links:
+  Template Repository: https://github.com/just-the-docs/just-the-docs-template
