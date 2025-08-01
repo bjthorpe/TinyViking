@@ -201,7 +201,12 @@ At this stage you should be able to create a file in /clusterfs and have it show
 on each node run the following:
 
 ```bash
-sudo apt install mpich python3-mpi4py
+# uninstall (default) oppenmpi as it does not work and gets in the way
+sudo apt remove libopenmpi3 libopenmpi-dev
+# Create a virtual enviroment
+python -m venv --system-site-packages mpi4py
+source ~/mpi4py/bin/activate
+pip install mpi4py mpich
 ```
 
 test mpi works by running a test script hello.py
@@ -214,7 +219,13 @@ mpirun python hello.py
 Now test running across multiple nodes
 
 ```bash
-mpirun -N 2 -H RaspberyPi_01,RaspberyPi_02 python hello.py
+mpirun -N 2 -H RaspberyPi_01,RaspberyPi_02 python hello_all.py
+```
+Finally you may wish to create a hostfile with a list of all the names of each node
+
+```bash
+printf "RaspberyPi_01\\nRaspberyPi_02\\n" >> /clusterfs/hosts
+mpirun -N 2 -f /clusterfs/hosts python hello_all.py
 ```
 
 ## OPTIONAL: Installing and Configuring SLURM on the Master Node
